@@ -1,113 +1,116 @@
 <?php
-$busqueda      = $_GET['buscar'] ?? '';
-$cuatri_filtro = $_GET['cuatrimestre'] ?? '';
-$docente_id    = $_SESSION['usuario_id'];
+$busqueda   = $_GET['buscar'] ?? '';
+$docente_id = $_SESSION['usuario_id'];
+
+$stmt_materia_doc = $pdo->prepare("SELECT nombre_materia FROM docente_materia WHERE docente_id = ?");
+$stmt_materia_doc->execute([$docente_id]);
+$mis_materias = $stmt_materia_doc->fetchAll(PDO::FETCH_COLUMN);
 
 $stmt_alumnos  = $pdo->query("SELECT id, nombre, apellido FROM estudiantes WHERE activo = 1 ORDER BY apellido ASC");
 $lista_alumnos = $stmt_alumnos->fetchAll();
 
-$sql = "SELECT m.id AS materia_id, e.nombre, e.apellido, m.nombre_materia, 
-               m.cuatrimestre, m.evaluacion, m.nota
+$sql = "SELECT m.*, e.nombre, e.apellido 
         FROM materias m
         INNER JOIN estudiantes e ON m.estudiante_id = e.id
-        WHERE (m.docente_id = :d_id OR m.profesor_id = :d_id OR :d_id = 1)
-        AND (e.nombre LIKE :b OR e.apellido LIKE :b OR m.nombre_materia LIKE :b)";
+        WHERE m.docente_id = :d_id 
+        AND (e.nombre LIKE :b OR e.apellido LIKE :b OR m.nombre_materia LIKE :b)
+        ORDER BY m.nombre_materia ASC, e.apellido ASC";
 
-if (!empty($cuatri_filtro)) {
-    $sql .= " AND m.cuatrimestre = :cuatri";
-}
-
-$sql .= " ORDER BY m.cuatrimestre ASC, e.apellido ASC";
-
-$stmt   = $pdo->prepare($sql);
-$params = ['d_id' => $docente_id, 'b' => "%$busqueda%"];
-if (!empty($cuatri_filtro)) $params['cuatri'] = $cuatri_filtro;
-
-$stmt->execute($params);
+$stmt = $pdo->prepare($sql);
+$stmt->execute(['d_id' => $docente_id, 'b' => "%$busqueda%"]);
 $registros = $stmt->fetchAll();
 ?>
 
-<h2>Panel del Docente - Calificaciones Cuatrimestrales</h2>
+<h2>Panel del Docente - Carga de Parciales y Recuperatorios</h2>
 
-<details style="margin-bottom: 20px; background: #eef2f5; padding: 15px; border-radius: 6px;">
-    <summary style="font-weight: bold; cursor: pointer; color: #2c3e50;">➕ Cargar Nueva Nota / Evaluación</summary>
-    <form action="nueva_nota.php" method="POST" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-top: 15px;">
-        <div>
-            <label>Alumno:</label>
-            <select name="estudiante_id" required style="width: 100%; padding: 6px;">
-                <?php foreach ($lista_alumnos as $al): ?>
-                    <option value="<?php echo $al['id']; ?>"><?php echo htmlspecialchars($al['nombre'] . ' ' . $al['apellido']); ?></option>
-                <?php endforeach; ?>
-            </select>
-        </div>
-        <div>
-            <label>Materia:</label>
-            <input type="text" name="nombre_materia" required placeholder="Ej: Programación Web" style="width: 100%; padding: 6px;">
-        </div>
-        <div>
-            <label>Cuatrimestre:</label>
-            <select name="cuatrimestre" style="width: 100%; padding: 6px;">
-                <option value="1er Cuatrimestre">1er Cuatrimestre</option>
-                <option value="2do Cuatrimestre">2do Cuatrimestre</option>
-            </select>
-        </div>
-        <div>
-            <label>Evaluación:</label>
-            <input type="text" name="evaluacion" placeholder="Ej: Parcial 1, TP" required style="width: 100%; padding: 6px;">
-        </div>
-        <div>
-            <label>Nota (1 al 10):</label>
-            <input type="number" step="0.5" min="1" max="10" name="nota" required style="width: 100%; padding: 6px;">
-        </div>
-        <div style="grid-column: 1 / -1; text-align: right; margin-top: 5px;">
-            <button type="submit" class="btn">Guardar Nota</button>
-        </div>
-    </form>
+<details style="margin-bottom: 20px; background: #eef2f5; padding: 15px; border-radius: 6px;" open>
+    <summary style="font-weight: bold; cursor: pointer; color: #2c3e50;">➕ Registrar Alumno en Materia</summary>
+
+    <?php if (!empty($mis_materias)): ?>
+        <form action="guardar_matriz.php" method="POST" style="display: flex; gap: 10px; margin-top: 15px; align-items: flex-end; flex-wrap: wrap;">
+            <div>
+                <label style="display:block;">Alumno:</label>
+                <select name="estudiante_id" required style="padding: 6px;">
+                    <?php foreach ($lista_alumnos as $al): ?>
+                        <option value="<?php echo $al['id']; ?>"><?php echo htmlspecialchars($al['nombre'] . ' ' . $al['apellido']); ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div>
+                <label style="display:block;">Asignatura:</label>
+                <select name="nombre_materia" required style="padding: 6px;">
+                    <?php foreach ($mis_materias as $mat): ?>
+                        <option value="<?php echo htmlspecialchars($mat); ?>"><?php echo htmlspecialchars($mat); ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div>
+                <label style="display:block;">Cuatrimestre:</label>
+                <select name="cuatrimestre" style="padding: 6px;">
+                    <option value="1er Cuatrimestre">1er Cuatrimestre</option>
+                    <option value="2do Cuatrimestre">2do Cuatrimestre</option>
+                </select>
+            </div>
+            <button type="submit" name="accion" value="crear" style="background: #27ae60; color: white; border: none; padding: 8px 15px; cursor: pointer; border-radius: 4px;">Crear Planilla</button>
+        </form>
+    <?php endif; ?>
 </details>
 
-<form method="GET" action="index.php" class="search-bar" style="margin-bottom: 20px;">
-    <input type="text" name="buscar" placeholder="Buscar alumno o materia..." value="<?php echo htmlspecialchars($busqueda); ?>">
-    <select name="cuatrimestre" style="padding: 8px;">
-        <option value="">-- Todos los Cuatrimestres --</option>
-        <option value="1er Cuatrimestre" <?php if ($cuatri_filtro === '1er Cuatrimestre') echo 'selected'; ?>>1er Cuatrimestre</option>
-        <option value="2do Cuatrimestre" <?php if ($cuatri_filtro === '2do Cuatrimestre') echo 'selected'; ?>>2do Cuatrimestre</option>
-    </select>
-    <button type="submit" class="btn">Filtrar 🔍</button>
-</form>
-
-<table>
-    <thead>
-        <tr>
-            <th>Alumno</th>
-            <th>Materia</th>
-            <th>Cuatrimestre</th>
-            <th>Evaluación</th>
-            <th>Nota</th>
-            <th>Acción</th>
-        </tr>
-    </thead>
-    <tbody>
-        <?php if (!empty($registros)): ?>
-            <?php foreach ($registros as $row): ?>
-                <tr>
-                    <td><?php echo htmlspecialchars($row['nombre'] . ' ' . $row['apellido']); ?></td>
-                    <td><?php echo htmlspecialchars($row['nombre_materia']); ?></td>
-                    <td><strong><?php echo htmlspecialchars($row['cuatrimestre']); ?></strong></td>
-                    <td><?php echo htmlspecialchars($row['evaluacion']); ?></td>
-                    <td><strong><?php echo $row['nota']; ?></strong></td>
-                    <td>
-                        <form action="editar_nota.php" method="POST" style="display: flex; gap: 5px;">
-                            <input type="hidden" name="materia_id" value="<?php echo $row['materia_id']; ?>">
-                            <input type="number" step="0.5" min="1" max="10" name="nota" value="<?php echo $row['nota']; ?>" style="width: 60px; padding: 3px;" required>
-                            <button type="submit" class="btn btn-edit">Modificar</button>
-                        </form>
-                    </td>
-                </tr>
-            <?php endforeach; ?>
-        <?php else: ?>
-            <tr>
-                <td colspan="6" style="text-align: center; color: #7f8c8d; padding: 20px;">No se encontraron registros.</td>
+<div style="overflow-x: auto;">
+    <table border="1" style="width: 100%; border-collapse: collapse; text-align: center; font-size: 0.9em;">
+        <thead>
+            <tr style="background: #2c3e50; color: white;">
+                <th rowspan="2">Alumno</th>
+                <th rowspan="2">Materia</th>
+                <th colspan="3" style="background: #2980b9;">PARCIALES</th>
+                <th colspan="3" style="background: #d35400;">RECUPERATORIOS</th>
+                <th rowspan="2" style="background: #27ae60;">Nota Regular</th>
+                <th rowspan="2">Acciones</th>
             </tr>
-        <?php endif; ?>
-    </tbody>
-</table>
+            <tr style="background: #34495e; color: white;">
+                <th>1°</th>
+                <th>2°</th>
+                <th>3°</th>
+                <th>1°</th>
+                <th>2°</th>
+                <th>3°</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php if (!empty($registros)): ?>
+                <?php foreach ($registros as $row): ?>
+                    <form action="guardar_matriz.php" method="POST">
+                        <input type="hidden" name="materia_id" value="<?php echo $row['id']; ?>">
+                        <tr>
+                            <td style="text-align: left; padding: 5px; font-weight: bold;"><?php echo htmlspecialchars($row['nombre'] . ' ' . $row['apellido']); ?></td>
+                            <td style="text-align: left; padding: 5px;"><?php echo htmlspecialchars($row['nombre_materia']); ?></td>
+
+                            <!-- Parciales -->
+                            <td><input type="number" step="0.5" min="1" max="10" name="p1" value="<?php echo $row['p1']; ?>" style="width: 45px;"></td>
+                            <td><input type="number" step="0.5" min="1" max="10" name="p2" value="<?php echo $row['p2']; ?>" style="width: 45px;"></td>
+                            <td><input type="number" step="0.5" min="1" max="10" name="p3" value="<?php echo $row['p3']; ?>" style="width: 45px;"></td>
+
+
+                            <td style="background: #fef9e7;"><input type="number" step="0.5" min="1" max="10" name="rec1" value="<?php echo $row['rec1']; ?>" style="width: 45px;"></td>
+                            <td style="background: #fef9e7;"><input type="number" step="0.5" min="1" max="10" name="rec2" value="<?php echo $row['rec2']; ?>" style="width: 45px;"></td>
+                            <td style="background: #fef9e7;"><input type="number" step="0.5" min="1" max="10" name="rec3" value="<?php echo $row['rec3']; ?>" style="width: 45px;"></td>
+
+
+                            <td style="font-weight: bold; background: #e8f8f5;"><?php echo $row['nota_regular'] ?? '-'; ?></td>
+
+
+                            <td style="padding: 5px; white-space: nowrap;">
+                                <button type="submit" name="accion" value="actualizar" style="background: #2980b9; color: white; border: none; padding: 4px 8px; cursor: pointer; border-radius: 3px;">💾 Guardar</button>
+                                <button type="submit" name="accion" value="borrar" onclick="return confirm('¿Borrar registro?')" style="background: #c0392b; color: white; border: none; padding: 4px 8px; cursor: pointer; border-radius: 3px;">🗑️</button>
+                            </td>
+                        </tr>
+                    </form>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <tr>
+                    <td colspan="10" style="padding: 15px;">No hay registros cargados.</td>
+                </tr>
+            <?php endif; ?>
+        </tbody>
+    </table>
+</div>
