@@ -1,40 +1,34 @@
 <?php
 session_start();
-ini_set('display_errors', 1);
-error_reporting(E_ALL);
-
 require_once "config/database.php";
 
-// Manejo de Cerrar Sesión
-if (isset($_GET['action']) && $_GET['action'] === 'logout') {
-    session_destroy();
-    header("Location: index.php");
-    exit;
-}
+$error = '';
 
-// Procesar el Login
-$error = "";
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    $email = trim($_POST['email'] ?? '');
-    $password = trim($_POST['password'] ?? '');
+    $login_user = trim($_POST['login_user'] ?? '');
+    $password   = trim($_POST['password'] ?? '');
 
-    $stmt = $pdo->prepare("SELECT * FROM usuarios WHERE email = ? AND password = ?");
-    $stmt->execute([$email, $password]);
+    if (!empty($login_user) && !empty($password)) {
+        $stmt = $pdo->prepare("SELECT * FROM usuarios WHERE (dni = ? OR email = ?) AND password = ?");
+        $stmt->execute([$login_user, $login_user, $password]);
     $user = $stmt->fetch();
 
     if ($user) {
         $_SESSION['usuario_id'] = $user['id'];
         $_SESSION['nombre']     = $user['nombre'];
         $_SESSION['email']      = $user['email'];
-        $_SESSION['rol']        = $user['rol'];
+            $_SESSION['rol']        = strtolower(trim($user['rol']));
+
         header("Location: index.php");
         exit;
     } else {
-        $error = "Credenciales inválidas.";
+            $error = "DNI/Email o contraseña incorrectos.";
+        }
+    } else {
+        $error = "Por favor, complete todos los campos.";
     }
 }
 
-// Carga de Vistas según estado de Sesión y Rol
 if (isset($_SESSION['usuario_id'])) {
     include "includes/header.php";
 
