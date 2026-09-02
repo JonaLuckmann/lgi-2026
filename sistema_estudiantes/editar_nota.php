@@ -7,12 +7,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_SESSION['usuario_id'])) {
     $nueva_nota = $_POST['nota'] ?? null;
 
     if ($materia_id !== null && $nueva_nota !== null) {
-        // Actualiza asegurando que la materia pertenezca al docente en sesión
-        $stmt = $pdo->prepare("UPDATE materias SET nota = ? WHERE id = ? AND docente_id = ?");
-        $stmt->execute([$nueva_nota, $materia_id, $_SESSION['usuario_id']]);
+        $sql = "UPDATE materias SET nota = :nota WHERE id = :id";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([
+            'nota' => $nueva_nota,
+            'id'   => $materia_id
+        ]);
     }
 }
 
 header("Location: index.php");
 exit;
-//comentario de prueva 

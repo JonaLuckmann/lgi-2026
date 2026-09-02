@@ -11,17 +11,17 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     if (!empty($login_user) && !empty($password)) {
         $stmt = $pdo->prepare("SELECT * FROM usuarios WHERE (dni = ? OR email = ?) AND password = ?");
         $stmt->execute([$login_user, $login_user, $password]);
-    $user = $stmt->fetch();
+        $user = $stmt->fetch();
 
-    if ($user) {
-        $_SESSION['usuario_id'] = $user['id'];
-        $_SESSION['nombre']     = $user['nombre'];
-        $_SESSION['email']      = $user['email'];
+        if ($user) {
+            $_SESSION['usuario_id'] = $user['id'];
+            $_SESSION['nombre']     = $user['nombre'];
+            $_SESSION['email']      = $user['email'];
             $_SESSION['rol']        = strtolower(trim($user['rol']));
 
-        header("Location: index.php");
-        exit;
-    } else {
+            header("Location: index.php");
+            exit;
+        } else {
             $error = "DNI/Email o contraseña incorrectos.";
         }
     } else {
