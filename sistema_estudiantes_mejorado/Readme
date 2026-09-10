@@ -1,0 +1,56 @@
+Sistema Academico (sistema_estudiantes)
+---------------------------------------
+
+Sistema web para gestionar notas. Los docentes cargan y editan notas
+(parciales y recuperatorios) y los estudiantes ven sus calificaciones.
+
+
+Tecnologias usadas
+------------------
+- PHP (logica del servidor)
+- MySQL (base de datos, con PDO)
+- HTML (estructura)
+- CSS (estilos)
+
+Sin frameworks ni librerias externas.
+
+
+Funcionalidades
+---------------
+- Inicio de sesion con DNI o correo electronico.
+- Panel docente: registrar alumnos en materias, cargar/editar notas,
+  calculo automatico de la nota regular (si hay recuperatorio reemplaza
+  al parcial), buscar alumnos y eliminar registros.
+- Panel estudiante: ver sus notas y el promedio general.
+
+
+Estructura del proyecto
+-----------------------
+index.php                  entrada: login y redireccion segun rol
+guardar_matriz.php         crear, actualizar y borrar registros
+logout.php
+config/database.php        conexion a MySQL con PDO
+includes/header.php        cabecera comun con usuario y rol
+vistas/login.php
+vistas/dashboard_docente.php
+vistas/dashboard_estudiante.php
+css/estilos.css
+
+
+Requisitos
+----------
+- Servidor local con PHP y MySQL (XAMPP o apache2 + mysql en Linux).
+- Base de datos "sistema_estudiantes" con las tablas:
+  usuarios, estudiantes, materias y docente_materia.
+- Credenciales configuradas en config/database.php.
+
+
+Como usarlo
+-----------
+1. Copiar la carpeta a htdocs (XAMPP) o /var/www/html (Linux).
+2. Crear e importar la base de datos en MySQL.
+3. Abrir en el navegador:
+   http://localhost/sistema_estudiantes
+
+Segun el rol del usuario, se muestra el panel de docente (edicion)
+o el de estudiante (solo visualizacion).
