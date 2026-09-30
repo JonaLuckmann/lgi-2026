@@ -1,0 +1,31 @@
+======================================
+Proyecto: Sistema Web Académico
+======================================
+
+Descripción:
+Sistema de gestión académica desarrollado en PHP procedural con PDO (MySQL) para la entrega de la materia.
+
+Entorno de desarrollo:
+- Kubuntu Linux + Apache
+- PHP 8.x
+- MySQL / MariaDB
+
+Cómo probarlo localmente:
+1. Copiar esta carpeta dentro del directorio de Apache:
+   /var/www/html/sistema-academico
+
+2. Importar la base de datos en MySQL (usando el script .sql incluido).
+
+3. Configurar los datos de conexión en el archivo de configuración si es necesario.
+
+4. Entrar desde el navegador a:
+   http://localhost/sistema-academico/
+
+Estructura rápida:
+- index.php: Controlador principal / entrada al sistema.
+- guardar_matriz.php: Procesamiento de notas y formularios.
+- vistas/: Pantallas e interfaz HTML.
+- css/: Estilos visuales.
+
+Notas:
+Las contraseñas y sesiones se manejan en servidor ($_SESSION) y las consultas usan sentencias preparadas con PDO por seguridad.
